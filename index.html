@@ -1,1 +1,266 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Search and discover books by title or author.">
+  <title>BookFinder | Discover Your Next Read</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f3ff;
+      color: #25213b;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #5b4bdb, #9275f5);
+      color: white;
+      text-align: center;
+      padding: 55px 20px 65px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .search-box {
+      max-width: 650px;
+      margin: -25px auto 35px;
+      padding: 0 20px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-box input {
+      flex: 1;
+      min-width: 0;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      outline: none;
+      box-shadow: 0 5px 20px #25213b18;
+    }
+
+    .search-box button {
+      background: #29234b;
+      color: white;
+      border: none;
+      padding: 0 24px;
+      border-radius: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .search-box button:hover {
+      background: #453b78;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: auto;
+      padding: 0 20px 50px;
+    }
+
+    .section-heading {
+      margin-bottom: 22px;
+      font-size: 1.4rem;
+    }
+
+    #message {
+      text-align: center;
+      color: #77718e;
+      padding: 35px 10px;
+      line-height: 1.6;
+    }
+
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 22px;
+    }
+
+    .book-card {
+      background: white;
+      padding: 18px;
+      border-radius: 15px;
+      box-shadow: 0 5px 20px #29234b0d;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .book-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px #29234b18;
+    }
+
+    .book-card img {
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      margin-bottom: 15px;
+      background: #f5f3ff;
+      border-radius: 8px;
+    }
+
+    .book-card h3 {
+      font-size: 1rem;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .book-card p {
+      color: #77718e;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .year {
+      display: inline-block;
+      margin-top: 10px;
+      background: #eeeaff;
+      color: #5b4bdb;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 22px;
+      color: #77718e;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 500px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .search-box {
+        flex-direction: column;
+      }
+
+      .search-box button {
+        padding: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>📚 BookFinder</h1>
+    <p>Discover your next favorite book.</p>
+  </header>
+
+  <form class="search-box" id="searchForm">
+    <input
+      type="search"
+      id="searchInput"
+      placeholder="Search by book title or author..."
+      aria-label="Search books by title or author"
+      required
+    >
+    <button type="submit">Search</button>
+  </form>
+
+  <main>
+    <h2 class="section-heading" id="resultHeading">Explore Books</h2>
+    <p id="message">Search for a book or author to get started.</p>
+    <section class="book-grid" id="bookGrid" aria-live="polite"></section>
+  </main>
+
+  <footer>
+    BookFinder © 2026 | Powered by Open Library
+  </footer>
+
+  <script>
+    const searchForm = document.getElementById("searchForm");
+    const searchInput = document.getElementById("searchInput");
+    const bookGrid = document.getElementById("bookGrid");
+    const message = document.getElementById("message");
+    const resultHeading = document.getElementById("resultHeading");
+
+    searchForm.addEventListener("submit", function(event) {
+      event.preventDefault();
+      searchBooks(searchInput.value.trim());
+    });
+
+    async function searchBooks(query) {
+      if (!query) return;
+
+      bookGrid.innerHTML = "";
+      message.textContent = "Searching for books...";
+      resultHeading.textContent = "Search Results";
+
+      try {
+        const response = await fetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=20`
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to fetch books.");
+        }
+
+        const data = await response.json();
+        const books = data.docs || [];
+
+        if (books.length === 0) {
+          message.textContent = "No books found. Try another title or author.";
+          return;
+        }
+
+        message.textContent = `Found ${books.length} books.`;
+        
+        books.forEach(book => {
+          const card = document.createElement("article");
+          card.className = "book-card";
+
+          const cover = document.createElement("img");
+          cover.src = book.cover_i
+            ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+            : "https://placehold.co/200x280/e9e4ff/5b4bdb?text=No+Cover";
+          cover.alt = book.title ? `Cover of ${book.title}` : "Book cover";
+          cover.loading = "lazy";
+
+          const title = document.createElement("h3");
+          title.textContent = book.title || "Unknown Title";
+
+          const author = document.createElement("p");
+          author.textContent = "By " +
+            (book.author_name ? book.author_name.join(", ") : "Unknown Author");
+
+          const year = document.createElement("span");
+          year.className = "year";
+          year.textContent = book.first_publish_year || "Year unavailable";
+
+          card.append(cover, title, author, year);
+          bookGrid.appendChild(card);
+        });
+
+      } catch (error) {
+        message.textContent =
+          "Something went wrong. Please check your internet connection and try again.";
+      }
+    }
+  </script>
+
+</body>
+</html>
+
